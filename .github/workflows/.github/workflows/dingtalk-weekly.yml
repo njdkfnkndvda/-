@@ -1,0 +1,44 @@
+name: 每周文章推送到钉钉
+
+on:
+  schedule:
+    # 每周一 北京时间 9:00 推送（UTC 时间是 1:00）
+    - cron: '0 1 * * 1'
+  workflow_dispatch:  # 允许手动点击运行，方便测试
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 发送文章到钉钉
+        env:
+          WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
+        run: |
+          # 这里写你要推送的内容（支持 Markdown）
+          TITLE="本周精选文章"
+          CONTENT=$(cat <<EOF
+          ### 📚 本周推荐阅读
+
+          1. [文章标题一](https://example.com/article1)
+             > 简单介绍这篇文章讲了什么
+
+          2. [文章标题二](https://example.com/article2)
+             > 简单介绍
+
+          3. [文章标题三](https://example.com/article3)
+
+          ---
+          *每周一自动推送 | 来自 GitHub Actions*
+          EOF
+          )
+
+          # 发送请求
+          curl -s -X POST "$WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"msgtype\": \"markdown\",
+              \"markdown\": {
+                \"title\": \"$TITLE\",
+                \"text\": \"$CONTENT\"
+              }
+            }"

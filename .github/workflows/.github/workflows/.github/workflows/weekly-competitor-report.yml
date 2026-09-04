@@ -1,0 +1,37 @@
+name: 每周竞品动态推送（另外20家）
+
+on:
+  schedule:
+    # 每周一 北京时间 9:00（UTC 01:00）
+    - cron: '0 1 * * 1'
+  workflow_dispatch:  # 允许手动触发测试
+
+jobs:
+  push-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 读取并发送竞品周报
+        env:
+          WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
+        run: |
+          # 读取数据文件（你每周更新这个文件）
+          if [ ! -f "data/weekly-competitors.md" ]; then
+            echo "错误：找不到 data/weekly-competitors.md 文件"
+            exit 1
+          fi
+
+          CONTENT=$(cat data/weekly-competitors.md)
+
+          # 发送到钉钉（Markdown 格式）
+          curl -s -X POST "$WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"msgtype\": \"markdown\",
+              \"markdown\": {
+                \"title\": \"超级电容竞品周报（另外20家）\",
+                \"text\": $(echo "$CONTENT" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')
+              }
+            }"
